@@ -99,7 +99,12 @@ class Http
                 }
             }
 
-            $server->send($fd, $cache[0]->{$cache[1]}($this->request , ...$cache[3]));
+            try {
+                $server->send($fd, $cache[0]->{$cache[1]}($this->request , ...$cache[3]));
+            } catch (\Throwable | \Exception $e) {
+                $server->send($fd, (new Handler())->render($e, $this->request));
+            }
+
             return;
         }
 
@@ -125,7 +130,11 @@ class Http
                 }
             }
 
-            $server->send($fd, $routeInfo[1][0]->{$routeInfo[1][1]}($this->request, ...$routeInfo[2]));
+            try {
+                $server->send($fd, $routeInfo[1][0]->{$routeInfo[1][1]}($this->request, ...$routeInfo[2]));
+            } catch (\Throwable | \Exception $e) {
+                $server->send($fd, (new Handler())->render($e, $this->request));
+            }
         } elseif ($routeInfo[0] === 0){
             $server->send($fd , (new Handler())->notFoundHttpException($this->request));
         } else {

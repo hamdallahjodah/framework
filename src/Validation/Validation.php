@@ -31,6 +31,11 @@ class Validation
         $results = [];
 
         foreach ($array as $values) {
+            
+            if (is_null($values)) {
+                continue;
+            }
+
             $results[] = $values;
         }
 
