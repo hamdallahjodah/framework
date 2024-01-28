@@ -3,9 +3,8 @@
 namespace Fomo\Log;
 
 use Carbon\Carbon;
-use Fomo\Facades\Contracts\InstanceInterface;
 
-class Logger implements InstanceInterface
+class Logger
 {
     protected string $channel = 'fomo';
     protected string $message;
@@ -98,11 +97,6 @@ class Logger implements InstanceInterface
         $this->type = 'WARNING';
 
         $this->storeLog();
-    }
-
-    public function getInstance(): self
-    {
-        return $this;
     }
 
     protected function storeLog(): void

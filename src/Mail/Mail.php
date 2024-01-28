@@ -2,22 +2,53 @@
 
 namespace Fomo\Mail;
 
-use Fomo\Facades\Log;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
+use Fomo\Log\Log;
 
-class Mail extends PHPMailer
+class Mail
 {
-    public function __construct($exceptions = true)
+    protected static PHPMailer $instance;
+
+    public static function setInstance(): void
     {
-        parent::__construct($exceptions);
+        self::$instance = new PHPMailer(true);
+
+        switch (env('MAIL_MAILER' , 'smtp')) {
+            case 'smtp':
+                self::$instance->isSMTP();
+                if (config('mail.username') != null && config('mail.password') != null)
+                    self::$instance->SMTPAuth = true;
+                self::$instance->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                break;
+            case 'mail':
+                self::$instance->isMail();
+                break;
+            case 'sendmail':
+                self::$instance->isSendmail();
+                break;
+            case 'qmail':
+                self::$instance->isQmail();
+                break;
+        }
+
+        self::$instance->Host = config('mail.host');
+        self::$instance->Username = config('mail.username');
+        self::$instance->Password = config('mail.password');
+        self::$instance->Port = config('mail.port');
+
+        try {
+            self::$instance->setFrom(env('MAIL_FROM_ADDRESS', 'hello@example.com'), env('MAIL_FROM_NAME', 'Example'));
+        } catch (Exception $e) {
+            Log::channel('mailer')->error($e->getMessage());
+        }
     }
 
     public function to(string|array $address): self
     {
         if (is_string($address)){
             try {
-                $this->addAddress($address);
+                self::$instance->addAddress($address);
             } catch (Exception $e) {
                 Log::channel('mailer')->error($e->getMessage());
             }
@@ -25,7 +56,7 @@ class Mail extends PHPMailer
             foreach ($address as $value){
                 if (is_string($value)){
                     try {
-                        $this->addAddress($value);
+                        self::$instance->addAddress($value);
                     } catch (Exception $e) {
                         Log::channel('mailer')->error($e->getMessage());
                     }
@@ -33,7 +64,7 @@ class Mail extends PHPMailer
 
                 if (is_array($value) && isset($value['address']) && isset($value['name'])){
                     try {
-                        $this->addAddress($value['address'], $value['name']);
+                        self::$instance->addAddress($value['address'], $value['name']);
                     } catch (Exception $e) {
                         Log::channel('mailer')->error($e->getMessage());
                     }
@@ -48,7 +79,7 @@ class Mail extends PHPMailer
     {
         if (is_string($address)){
             try {
-                $this->addReplyTo($address);
+                self::$instance->addReplyTo($address);
             } catch (Exception $e) {
                 Log::channel('mailer')->error($e->getMessage());
             }
@@ -56,7 +87,7 @@ class Mail extends PHPMailer
             foreach ($address as $value){
                 if (is_string($value)){
                     try {
-                        $this->addReplyTo($value);
+                        self::$instance->addReplyTo($value);
                     } catch (Exception $e) {
                         Log::channel('mailer')->error($e->getMessage());
                     }
@@ -64,7 +95,7 @@ class Mail extends PHPMailer
 
                 if (is_array($value) && isset($value['address']) && isset($value['name'])){
                     try {
-                        $this->addReplyTo($value['address'], $value['name']);
+                        self::$instance->addReplyTo($value['address'], $value['name']);
                     } catch (Exception $e) {
                         Log::channel('mailer')->error($e->getMessage());
                     }
@@ -79,7 +110,7 @@ class Mail extends PHPMailer
     {
         if (is_string($address)){
             try {
-                $this->addCC($address);
+                self::$instance->addCC($address);
             } catch (Exception $e) {
                 Log::channel('mailer')->error($e->getMessage());
             }
@@ -87,7 +118,7 @@ class Mail extends PHPMailer
             foreach ($address as $value){
                 if (is_string($value)){
                     try {
-                        $this->addCC($value);
+                        self::$instance->addCC($value);
                     } catch (Exception $e) {
                         Log::channel('mailer')->error($e->getMessage());
                     }
@@ -95,7 +126,7 @@ class Mail extends PHPMailer
 
                 if (is_array($value) && isset($value['address']) && isset($value['name'])){
                     try {
-                        $this->addCC($value['address'], $value['name']);
+                        self::$instance->addCC($value['address'], $value['name']);
                     } catch (Exception $e) {
                         Log::channel('mailer')->error($e->getMessage());
                     }
@@ -110,7 +141,7 @@ class Mail extends PHPMailer
     {
         if (is_string($address)){
             try {
-                $this->addBCC($address);
+                self::$instance->addBCC($address);
             } catch (Exception $e) {
                 Log::channel('mailer')->error($e->getMessage());
             }
@@ -118,7 +149,7 @@ class Mail extends PHPMailer
             foreach ($address as $value){
                 if (is_string($value)){
                     try {
-                        $this->addBCC($value);
+                        self::$instance->addBCC($value);
                     } catch (Exception $e) {
                         Log::channel('mailer')->error($e->getMessage());
                     }
@@ -126,7 +157,7 @@ class Mail extends PHPMailer
 
                 if (is_array($value) && isset($value['address']) && isset($value['name'])){
                     try {
-                        $this->addBCC($value['address'], $value['name']);
+                        self::$instance->addBCC($value['address'], $value['name']);
                     } catch (Exception $e) {
                         Log::channel('mailer')->error($e->getMessage());
                     }
@@ -141,14 +172,14 @@ class Mail extends PHPMailer
     {
         if (is_string($file)){
             try {
-                $this->addAttachment($file);
+                self::$instance->addAttachment($file);
             } catch (Exception $e) {
                 Log::channel('mailer')->error($e->getMessage());
             }
         } else{
             foreach ($file as $value){
                 try {
-                    $this->addAttachment($value);
+                    self::$instance->addAttachment($value);
                 } catch (Exception $e) {
                     Log::channel('mailer')->error($e->getMessage());
                 }
@@ -160,31 +191,31 @@ class Mail extends PHPMailer
 
     public function subject(string $subject): self
     {
-        $this->Subject = $subject;
+        self::$instance->Subject = $subject;
 
         return $this;
     }
 
     public function body(string $body): self
     {
-        $this->Body = $body;
+        self::$instance->Body = $body;
 
         return $this;
     }
 
     public function altBody(string $altBody): self
     {
-        $this->AltBody = $altBody;
+        self::$instance->AltBody = $altBody;
 
         return $this;
     }
 
     public function send(): void
     {
-        $this->isHTML(true);
+        self::$instance->isHTML(true);
 
         try {
-            $this->send();
+            self::$instance->send();
         } catch (Exception $e) {
             Log::channel('mailer')->error($e->getMessage());
         }

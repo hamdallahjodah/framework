@@ -2,16 +2,23 @@
 
 namespace Fomo\Auth;
 
-use Fomo\Facades\Contracts\InstanceInterface;
 use stdClass;
 
-class Auth implements InstanceInterface
+class Auth
 {
-    protected stdClass $user;
+    protected static ?self $instance = null;
 
-    public function setUser(stdClass $user): void
+    public function __construct(
+        protected ?stdClass $user = null
+    ){}
+
+    public static function getInstance(?stdClass $user = null): Auth
     {
-        $this->user = $user;
+        if (is_null(self::$instance)){
+            return self::$instance = new self($user);
+        }
+
+        return self::$instance;
     }
 
     public function user(): stdClass
@@ -26,11 +33,6 @@ class Auth implements InstanceInterface
 
     public function check(): bool
     {
-        return !isset($this->user);
-    }
-
-    public function getInstance(): self
-    {
-        return $this;
+        return !is_null($this->user);
     }
 }

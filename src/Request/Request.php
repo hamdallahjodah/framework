@@ -3,10 +3,9 @@
 namespace Fomo\Request;
 
 use FastRoute\Dispatcher;
-use Fomo\Facades\Contracts\InstanceInterface;
 use Swoole\Server;
 
-class Request implements InstanceInterface
+class Request
 {
     use AdditionalTrait;
 
@@ -15,10 +14,6 @@ class Request implements InstanceInterface
     protected int $connectionId;
 
     protected bool $advancedMode;
-
-    protected Server $server;
-
-    protected Dispatcher $dispatcher;
 
     protected array $methodCache = [];
 
@@ -36,8 +31,20 @@ class Request implements InstanceInterface
 
     protected array $postsCache = [];
 
-    public function __construct(){
-        $this->advancedMode = app()->make('config')->get('server.advanceMode.request');
+    public function __construct(
+        protected readonly Server $server ,
+        protected readonly Dispatcher $dispatcher
+    ){
+        $this->advancedMode = config('server.advanceMode.request');
+    }
+
+    /*
+     * set buffer and connectionId
+     */
+    public function setBC(string $buffer , int $connectionId): void
+    {
+        $this->buffer = $buffer;
+        $this->connectionId = $connectionId;
     }
 
     public function get(?string $name = null, string|int|bool|array|float|null $default = null): string|int|bool|array|float|null
@@ -287,29 +294,5 @@ class Request implements InstanceInterface
     public function localPort(): int
     {
         return (int) config('server.port');
-    }
-
-    public function getInstance(): self
-    {
-        return $this;
-    }
-
-    public function setServer(Server $server): void
-    {
-        $this->server = $server;
-    }
-
-    public function setDispatcher(Dispatcher $dispatcher): void
-    {
-        $this->dispatcher = $dispatcher;
-    }
-
-    /*
-     * set buffer and connectionId
-     */
-    public function setBC(string $buffer , int $connectionId): void
-    {
-        $this->buffer = $buffer;
-        $this->connectionId = $connectionId;
     }
 }

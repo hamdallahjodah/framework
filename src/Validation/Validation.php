@@ -2,96 +2,23 @@
 
 namespace Fomo\Validation;
 
-use Fomo\Facades\Contracts\InstanceInterface;
-use Fomo\Facades\Language;
+use Fomo\Language\Language;
 
-class Validation implements InstanceInterface
+class Validation
 {
     use RulesTrait;
 
+    protected array $rules = [];
     protected array $errorDefaultMessage = [];
     protected array $errors = [];
     protected array $data;
 
-    public function __construct()
-    {
-        $this->errorDefaultMessage = app()->make('language')->getErrorMessages();
-    }
-
-    public function validate(array $data , array $rules): self
+    public function __construct(array $data , array $rules)
     {
         $this->data = $data;
-
-        foreach ($rules as $index => $rule){
-            $rule = explode('|' , $rule);
-            $indexExplode = explode('.' , $index);
-            count($indexExplode) > 1 ? $indexLocal = last($indexExplode) : $indexLocal = $index;
-
-            if ($indexLocal == '*'){
-                $lastKey = array_key_last($indexExplode);
-                $indexLocal = $indexExplode[$lastKey - 1];
-            }
-
-            foreach ($rule as $item) {
-                $itemExplode = explode(':' , $item);
-                $item = $itemExplode[0];
-                $value = $itemExplode[1] ?? null;
-
-                $message = str_replace([":attribute" , ":value"] , [$this->errorDefaultMessage['attribute'][$indexLocal] ?? $indexLocal , $value] , $this->errorDefaultMessage['message'][$item]);
-
-                $localeField = $this->errorDefaultMessage['attribute'][$indexLocal] ?? $indexLocal;
-
-                $this->$item([
-                    'rule' => $index ,
-                    'value' => $value ,
-                    'message' => $message ,
-                    'localeField' => $localeField
-                ]);
-            }
-        }
-
-        return $this;
-    }
-
-    public function hasError(): bool
-    {
-        if (empty($this->errors))
-            return false;
-
-        return true;
-    }
-
-    public function hasMessage(): bool
-    {
-        if (empty($this->errors))
-            return false;
-
-        return true;
-    }
-
-    public function getMessages(): array
-    {
-        return array_column($this->errors , 'message');
-    }
-
-    public function firstMessage(): string
-    {
-        return $this->errors[0]['message'];
-    }
-
-    public function getErrors(): array
-    {
-        return $this->errors;
-    }
-
-    public function firstError(): array
-    {
-        return $this->errors[0];
-    }
-
-    public function getInstance(): self
-    {
-        return $this;
+        $this->rules = $rules;
+        $this->errorDefaultMessage = Language::getInstance()->getErrorMessages();
+        $this->validate();
     }
 
     protected function existsData(array $array, string|int $key): bool
@@ -104,11 +31,6 @@ class Validation implements InstanceInterface
         $results = [];
 
         foreach ($array as $values) {
-
-            if (is_null($values)) {
-                continue;
-            }
-            
             $results[] = $values;
         }
 
@@ -152,5 +74,72 @@ class Validation implements InstanceInterface
         }
 
         return $target;
+    }
+
+    protected function validate(): void
+    {
+        foreach ($this->rules as $index => $rule){
+            $rule = explode('|' , $rule);
+            $indexExplode = explode('.' , $index);
+            count($indexExplode) > 1 ? $indexLocal = last($indexExplode) : $indexLocal = $index;
+
+            if ($indexLocal == '*'){
+                $lastKey = array_key_last($indexExplode);
+                $indexLocal = $indexExplode[$lastKey - 1];
+            }
+
+            foreach ($rule as $item) {
+                $itemExplode = explode(':' , $item);
+                $item = $itemExplode[0];
+                $value = $itemExplode[1] ?? null;
+
+                $message = str_replace([":attribute" , ":value"] , [$this->errorDefaultMessage['attribute'][$indexLocal] ?? $indexLocal , $value] , $this->errorDefaultMessage['message'][$item]);
+
+                $localeField = $this->errorDefaultMessage['attribute'][$indexLocal] ?? $indexLocal;
+
+                $this->$item([
+                    'rule' => $index ,
+                    'value' => $value ,
+                    'message' => $message ,
+                    'localeField' => $localeField
+                ]);
+            }
+        }
+    }
+
+    public function hasError(): bool
+    {
+        if (empty($this->errors))
+            return false;
+
+        return true;
+    }
+
+    public function hasMessage(): bool
+    {
+        if (empty($this->errors))
+            return false;
+
+        return true;
+    }
+
+    public function getMessages(): array
+    {
+        return array_column($this->errors , 'message');
+    }
+
+    public function firstMessage(): string
+    {
+        return $this->errors[0]['message'];
+    }
+
+    public function getErrors(): array
+    {
+        return $this->errors;
+    }
+
+    public function firstError(): array
+    {
+        return $this->errors[0];
     }
 }

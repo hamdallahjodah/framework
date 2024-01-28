@@ -2,19 +2,28 @@
 
 namespace Fomo\Config;
 
-use Fomo\Facades\Contracts\InstanceInterface;
-
-class Config implements InstanceInterface
+class Config
 {
+    protected static ?self $instance = null;
+
     protected array $fileCache = [];
     protected array $keyCache = [];
 
+    public static function getInstance(): self
+    {
+        if (is_null(self::$instance)) {
+            return self::$instance = new self();
+        }
+
+        return self::$instance;
+    }
+
     public function get(string $key, string|int|bool|array|float|null $default = null): string|int|bool|array|float|null
     {
-        $key = explode('.' , $key);
+        $key = \explode('.' , $key);
         $configPath = $key[0];
         unset($key[0]);
-        $key = implode('.' , $key);
+        $key = \implode('.' , $key);
 
         $config = $this->fileCache[$configPath] ?? ($this->fileCache[$configPath] = require_once configPath("$configPath.php"));
 
@@ -23,11 +32,6 @@ class Config implements InstanceInterface
         }
 
         return $this->keyCache["$configPath.$key"] ?? ($this->keyCache["$configPath.$key"] = $this->getData($config, $key, $default));
-    }
-
-    public function getInstance(): self
-    {
-        return $this;
     }
 
     protected function getData(array $array, string $key, string|int|bool|array|float|null $default = null): string|int|bool|array|float|null

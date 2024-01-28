@@ -2,17 +2,9 @@
 
 namespace Fomo\Response;
 
-use Fomo\Facades\Contracts\InstanceInterface;
-
-class Response implements InstanceInterface
+class Response
 {
     use AdditionalTrait;
-
-    protected int $status;
-
-    protected array $headers = [];
-
-    protected string $body;
 
     protected array $phrases = [
         100 => 'Continue',
@@ -74,6 +66,12 @@ class Response implements InstanceInterface
         508 => 'Loop Detected',
         511 => 'Network Authentication Required',
     ];
+
+    public function __construct(
+        protected int $status = 200 ,
+        protected array $headers = ['Connection' => 'keep-alive'] ,
+        protected string $body = ''
+    ){}
 
     public function withHeader(string $name , string $value): self
     {
@@ -152,11 +150,6 @@ class Response implements InstanceInterface
     public function rawBody(): string
     {
         return $this->body;
-    }
-
-    public function getInstance(): self
-    {
-        return $this;
     }
 
     public function __toString()

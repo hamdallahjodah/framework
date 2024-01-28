@@ -2,10 +2,9 @@
 
 namespace Fomo\Cache;
 
-use Fomo\Facades\Contracts\InstanceInterface;
 use Fomo\Redis\Redis;
 
-class Cache implements InstanceInterface
+class Cache
 {
     public function get(string $key , $default = null , int $expire = null)
     {
@@ -91,25 +90,20 @@ class Cache implements InstanceInterface
 
     protected function getByKey(string $key)
     {
-        return unserialize(Redis::getInstance()->get($key));
+        return json_decode(Redis::getInstance()->get($key));
     }
 
     protected function setByKey(string $key , $value , int $expire = null): void
     {
         if (is_null($expire)){
-            Redis::getInstance()->set($key , serialize($value));
+            Redis::getInstance()->set($key , json_encode($value));
         } else{
-            Redis::getInstance()->setex($key , $expire , serialize($value));
+            Redis::getInstance()->setex($key , $expire , json_encode($value));
         }
     }
 
     protected function deleteByKey(string $key): void
     {
         Redis::getInstance()->del($key);
-    }
-
-    public function getInstance(): self
-    {
-        return $this;
     }
 }

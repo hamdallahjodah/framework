@@ -2,12 +2,11 @@
 
 namespace Fomo\Http;
 
-use Fomo\Facades\Contracts\InstanceInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Exception\RequestException;
 
-class Http implements InstanceInterface
+class Http
 {
     protected Client $client;
 
@@ -208,11 +207,6 @@ class Http implements InstanceInterface
         $this->parsPostRequest($url , $body , $contentType);
 
         return $this->send('DELETE');
-    }
-
-    public function getInstance(): self
-    {
-        return $this;
     }
 
     protected function parsPostRequest(string $url , array $body , string $contentType): void
